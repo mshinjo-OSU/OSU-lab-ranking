@@ -1,7 +1,7 @@
 import streamlit as st
 import random
 
-# --- 初期化 ---
+# --- 初期化関数 ---
 def initialize_state():
     labs = [
         "吉川研究室（プライバシー保護技術）", "小山田研究室（可視化情報学）", "原研究室（イノベーション・マネジメント）",
@@ -11,76 +11,77 @@ def initialize_state():
         "夏川研究室（情報可視化・スポーツデータ科学）", "上阪研究室（計量文献学）", "新庄研究室（コンピュータ数学）"
     ]
     random.shuffle(labs)
-    st.session_state.labs = [[lab] for lab in labs]
+    st.session_state.rounds = [[lab] for lab in labs]
+    st.session_state.current_pairs = []
+    st.session_state.current_index = 0
+    st.session_state.next_round = []
+    st.session_state.done = False
     st.session_state.phase = "compare"
-    st.session_state.merged = []
-    st.session_state.index = 0
 
-# 初回起動またはリセット
-if "phase" not in st.session_state or st.session_state.phase == "reset":
-    initialize_state()
-
-# マージ1ステップを生成する
-def prepare_next_round():
-    labs = st.session_state.labs
-    merged = []
-    i = 0
-    while i < len(labs):
-        if i + 1 < len(labs):
-            merged.append([labs[i], labs[i + 1]])  # 比較対象ペア
-        else:
-            merged.append(labs[i])  # 端数をそのまま残す
-        i += 2
-    st.session_state.labs = merged
-    st.session_state.index = 0
-    st.session_state.merged = []
-
-# 比較対象を探して flatten する
-def flatten(lab):
-    if isinstance(lab, str):
-        return [lab]
-    elif isinstance(lab, list):
+def flatten(node):
+    if isinstance(node, str):
+        return [node]
+    elif isinstance(node, list):
         result = []
-        for item in lab:
+        for item in node:
             result.extend(flatten(item))
         return result
     return []
 
-# --- UI 表示 ---
+# --- 再起動 or 初回 ---
+if "phase" not in st.session_state or st.session_state.get("phase") == "reset":
+    initialize_state()
+
+# --- ペア準備 ---
+def prepare_pairs():
+    st.session_state.current_pairs = []
+    i = 0
+    while i < len(st.session_state.rounds):
+        if i + 1 < len(st.session_state.rounds):
+            st.session_state.current_pairs.append((st.session_state.rounds[i], st.session_state.rounds[i+1]))
+        else:
+            st.session_state.next_round.append(st.session_state.rounds[i])
+        i += 2
+    st.session_state.current_index = 0
+
+# --- 選択の後処理 ---
+def process_selection(winner):
+    st.session_state.next_round.append(flatten(winner))
+    st.session_state.current_index += 1
+
+    if st.session_state.current_index >= len(st.session_state.current_pairs):
+        # ラウンド終了
+        st.session_state.rounds = st.session_state.next_round
+        st.session_state.next_round = []
+        if len(st.session_state.rounds) == 1:
+            st.session_state.phase = "done"
+        else:
+            prepare_pairs()
+
+# --- UI 描画 ---
 st.title("研究室興味ランキング調査")
 
 if st.session_state.phase == "compare":
-    if isinstance(st.session_state.labs[0], str):
-        st.session_state.phase = "done"
+    if not st.session_state.current_pairs:
+        prepare_pairs()
 
-    elif st.session_state.index < len(st.session_state.labs):
-        pair = st.session_state.labs[st.session_state.index]
-        if isinstance(pair, list) and len(pair) == 2:
-            left = flatten(pair[0])[0]
-            right = flatten(pair[1])[0]
+    if st.session_state.current_index < len(st.session_state.current_pairs):
+        a, b = st.session_state.current_pairs[st.session_state.current_index]
+        lab1 = a[0] if isinstance(a, list) else a
+        lab2 = b[0] if isinstance(b, list) else b
 
-            st.write("どちらの研究室により興味がありますか？")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button(f"🅰 {left}", key=f"left_{st.session_state.index}"):
-                    st.session_state.merged.append(pair)
-                    st.session_state.index += 1
-            with col2:
-                if st.button(f"🅱 {right}", key=f"right_{st.session_state.index}"):
-                    st.session_state.merged.append([pair[1], pair[0]])  # 順序を逆転して保存
-                    st.session_state.index += 1
-        else:
-            st.session_state.merged.append(pair)
-            st.session_state.index += 1
-    else:
-        st.session_state.labs = st.session_state.merged
-        st.session_state.index = 0
-        st.session_state.merged = []
+        st.write("どちらの研究室により興味がありますか？")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button(f"🅰 {lab1}", key=f"btn1_{st.session_state.current_index}"):
+                process_selection(a)
+        with col2:
+            if st.button(f"🅱 {lab2}", key=f"btn2_{st.session_state.current_index}"):
+                process_selection(b)
 
-# 結果表示
-if st.session_state.phase == "done":
+elif st.session_state.phase == "done":
     st.success("あなたの興味順ランキングはこちら！")
-    final = flatten(st.session_state.labs)
+    final = flatten(st.session_state.rounds)
     for i, lab in enumerate(final, 1):
         st.write(f"{i}位: {lab}")
 

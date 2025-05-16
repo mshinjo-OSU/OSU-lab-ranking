@@ -1,7 +1,7 @@
 import streamlit as st
 import random
 
-# 研究室のリスト（表示順をシャッフル）
+# 研究室リスト
 labs = [
     "吉川研究室（プライバシー保護技術）", "小山田研究室（可視化情報学）", "原研究室（イノベーション・マネジメント）",
     "鎌原研究室（インターネットアプリケーション）", "笠原研究室（観光情報学）", "杉山研究室（情報検索・自然言語処理）",
@@ -15,14 +15,14 @@ random.shuffle(labs)
 # タイトル
 st.title("研究室興味ランキング調査")
 
-# セッションステートの初期化
+# セッション初期化
 if "labs" not in st.session_state:
     st.session_state.labs = labs
     st.session_state.stack = [[lab] for lab in labs]
     st.session_state.current_pair = None
     st.session_state.finished = False
 
-# 比較処理を進める
+# 次の比較対象をセット
 def next_comparison():
     if len(st.session_state.stack) == 1:
         st.session_state.finished = True
@@ -35,7 +35,7 @@ def next_comparison():
             new_stack.append([st.session_state.stack[i], st.session_state.stack[i + 1]])
     st.session_state.stack = new_stack
 
-# 現在の比較ペアを設定
+# 現在の比較対象を取得
 def resolve_pair():
     stack = st.session_state.stack
     for i in range(len(stack)):
@@ -50,7 +50,7 @@ def resolve_pair():
             return
     st.session_state.current_pair = None
 
-# 比較を進める or 結果を表示
+# 表示ロジック
 if not st.session_state.finished:
     resolve_pair()
     if st.session_state.current_pair:
@@ -66,7 +66,6 @@ if not st.session_state.finished:
                 st.session_state.stack[idx] = [lab2]
                 next_comparison()
 else:
-    # 最終的なリストを平坦化して表示
     flat_list = []
     def flatten(stack):
         for item in stack:

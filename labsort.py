@@ -18,6 +18,16 @@ def initialize_state():
     st.session_state.done = False
     st.session_state.phase = "compare"
 
+def flatten(node):
+    if isinstance(node, str):
+        return [node]
+    elif isinstance(node, list):
+        result = []
+        for item in node:
+            result.extend(flatten(item))
+        return result
+    return []
+
 # --- 再起動 or 初回 ---
 if "phase" not in st.session_state or st.session_state.get("phase") == "reset":
     initialize_state()

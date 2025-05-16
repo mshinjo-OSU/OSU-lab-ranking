@@ -98,6 +98,10 @@ if st.session_state.phase == "done":
     st.success("あなたの興味順ランキングはこちら！")
     for i, lab in enumerate(st.session_state.sorted_labs, 1):
         st.write(f"{i}位: {lab}")
+    
     if st.button("やり直す"):
-        st.session_state.clear()
-        st.stop()
+        # すべて初期化して再実行
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.experimental_rerun()
+

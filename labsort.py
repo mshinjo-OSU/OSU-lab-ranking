@@ -99,13 +99,14 @@ if st.session_state.phase == "done":
     for i, lab in enumerate(st.session_state.sorted_labs, 1):
         st.write(f"{i}位: {lab}")
 
+    # 「やり直す」ボタンが押されたときの安全な処理
     if st.button("やり直す"):
-        st.session_state.clear()
-        st.session_state.restart_flag = True
+        # フラグを立てて rerun だけする（clear は次回起動時に）
+        st.session_state.restart = True
         st.experimental_rerun()
 
-# rerunループを防止するための一時停止フラグ
-if st.session_state.get("restart_flag", False):
-    st.session_state.clear()
-
+# ↑とは独立して、rerun後に clear を安全に実行
+if st.session_state.get("restart", False):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
 

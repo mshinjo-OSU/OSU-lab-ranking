@@ -59,7 +59,7 @@ def process_selection(winner, loser):
             prepare_pairs()
 
 # --- UI 描画 ---
-st.title("研究室興味ランキング調査")
+st.title("研究室興味ランキング")
 
 if st.session_state.phase == "compare":
     if not st.session_state.current_pairs:

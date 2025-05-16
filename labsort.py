@@ -15,9 +15,9 @@ def initialize_state():
     st.session_state.current_pairs = []
     st.session_state.current_index = 0
     st.session_state.next_round = []
-    st.session_state.done = False
     st.session_state.phase = "compare"
 
+# --- 再帰的 flatten 関数（深さ無制限） ---
 def flatten(node):
     if isinstance(node, str):
         return [node]
@@ -26,7 +26,8 @@ def flatten(node):
         for item in node:
             result.extend(flatten(item))
         return result
-    return []
+    else:
+        return []
 
 # --- 再起動 or 初回 ---
 if "phase" not in st.session_state or st.session_state.get("phase") == "reset":
@@ -38,19 +39,18 @@ def prepare_pairs():
     i = 0
     while i < len(st.session_state.rounds):
         if i + 1 < len(st.session_state.rounds):
-            st.session_state.current_pairs.append((st.session_state.rounds[i], st.session_state.rounds[i+1]))
+            st.session_state.current_pairs.append((st.session_state.rounds[i], st.session_state.rounds[i + 1]))
         else:
             st.session_state.next_round.append(st.session_state.rounds[i])
         i += 2
     st.session_state.current_index = 0
 
-# --- 選択の後処理 ---
-def process_selection(winner):
-    st.session_state.next_round.append(flatten(winner))
+# --- 選択後の処理（勝敗順に保持） ---
+def process_selection(winner, loser):
+    st.session_state.next_round.append([winner, loser])  # 勝者が先
     st.session_state.current_index += 1
 
     if st.session_state.current_index >= len(st.session_state.current_pairs):
-        # ラウンド終了
         st.session_state.rounds = st.session_state.next_round
         st.session_state.next_round = []
         if len(st.session_state.rounds) == 1:
@@ -67,22 +67,22 @@ if st.session_state.phase == "compare":
 
     if st.session_state.current_index < len(st.session_state.current_pairs):
         a, b = st.session_state.current_pairs[st.session_state.current_index]
-        lab1 = a[0] if isinstance(a, list) else a
-        lab2 = b[0] if isinstance(b, list) else b
+        lab1 = flatten(a)[0]
+        lab2 = flatten(b)[0]
 
         st.write("どちらの研究室により興味がありますか？")
         col1, col2 = st.columns(2)
         with col1:
             if st.button(f"🅰 {lab1}", key=f"btn1_{st.session_state.current_index}"):
-                process_selection(a)
+                process_selection(a, b)
         with col2:
             if st.button(f"🅱 {lab2}", key=f"btn2_{st.session_state.current_index}"):
-                process_selection(b)
+                process_selection(b, a)
 
 elif st.session_state.phase == "done":
     st.success("あなたの興味順ランキングはこちら！")
-    final = flatten(st.session_state.rounds)
-    for i, lab in enumerate(final, 1):
+    flat_result = flatten(st.session_state.rounds)
+    for i, lab in enumerate(flat_result, 1):
         st.write(f"{i}位: {lab}")
 
     if st.button("やり直す"):

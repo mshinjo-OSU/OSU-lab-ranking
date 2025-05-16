@@ -81,7 +81,7 @@ if st.session_state.phase == "compare":
 
 elif st.session_state.phase == "done":
     st.success("あなたの興味順ランキングはこちら！")
-    final = flatten(st.session_state.rounds[0])
+    final = flatten(st.session_state.stack)
     for i, lab in enumerate(final, 1):
         st.write(f"{i}位: {lab}")
 

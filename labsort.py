@@ -46,7 +46,7 @@ def prepare_pairs():
 
 # --- 選択の後処理 ---
 def process_selection(winner):
-    st.session_state.next_round.append(winner)
+    st.session_state.next_round.append(flatten(winner))
     st.session_state.current_index += 1
 
     if st.session_state.current_index >= len(st.session_state.current_pairs):

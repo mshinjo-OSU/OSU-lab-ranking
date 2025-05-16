@@ -71,7 +71,8 @@ if st.session_state.phase == "compare":
 
 elif st.session_state.phase == "done":
     st.success("あなたの興味順ランキングはこちら！")
-    for i, lab in enumerate(st.session_state.rounds[0], 1):
+    final = flatten(st.session_state.rounds[0])
+    for i, lab in enumerate(final, 1):
         st.write(f"{i}位: {lab}")
 
     if st.button("やり直す"):

@@ -1,8 +1,8 @@
 import streamlit as st
 import random
 
-# --- 初期化関数 ---
-def initialize_state():
+# --- 初期化 ---
+def initialize():
     labs = [
         "吉川研究室（プライバシー保護技術）", "小山田研究室（可視化情報学）", "原研究室（イノベーション・マネジメント）",
         "鎌原研究室（インターネットアプリケーション）", "笠原研究室（観光情報学）", "杉山研究室（情報検索・自然言語処理）",
@@ -11,71 +11,76 @@ def initialize_state():
         "夏川研究室（情報可視化・スポーツデータ科学）", "上阪研究室（計量文献学）", "新庄研究室（コンピュータ数学）"
     ]
     random.shuffle(labs)
-    st.session_state.stack = [[lab] for lab in labs]
-    st.session_state.finished = False
-    st.session_state.result = None
-    st.session_state.page_state = "compare"
+    st.session_state.rounds = [[lab] for lab in labs]
+    st.session_state.current_pairs = []
+    st.session_state.current_index = 0
+    st.session_state.next_round = []
+    st.session_state.done = False
+    st.session_state.phase = "compare"
 
-# --- 再起動リクエスト時に初期化 ---
-if st.session_state.get("page_state") == "reset":
-    initialize_state()
+# --- 初回起動 or リセット時 ---
+if "phase" not in st.session_state or st.session_state.get("phase") == "reset":
+    initialize()
 
-# --- 初回起動時に初期化 ---
-if "page_state" not in st.session_state:
-    initialize_state()
+# --- ペアを準備する ---
+def prepare_pairs():
+    pairs = []
+    i = 0
+    while i < len(st.session_state.rounds):
+        if i + 1 < len(st.session_state.rounds):
+            pairs.append((st.session_state.rounds[i], st.session_state.rounds[i+1]))
+            i += 2
+        else:
+            st.session_state.next_round.append(st.session_state.rounds[i])
+            i += 1
+    st.session_state.current_pairs = pairs
+    st.session_state.current_index = 0
 
-# --- 比較対象のペアを再帰的に探す ---
-def find_pair(node):
-    if isinstance(node, list) and len(node) == 2:
-        left, right = node
-        if isinstance(left, list):
-            pair = find_pair(left)
-            if pair:
-                return pair
-        if isinstance(right, list):
-            pair = find_pair(right)
-            if pair:
-                return pair
-        if isinstance(left, str) and isinstance(right, str):
-            return node
-    return None
+# --- 比較ロジック ---
+def compare_ui():
+    pairs = st.session_state.current_pairs
+    idx = st.session_state.current_index
 
-# --- 構造をフラット化してランキングに変換 ---
-def flatten(node):
-    if isinstance(node, str):
-        return [node]
-    elif isinstance(node, list):
-        result = []
-        for item in node:
-            result.extend(flatten(item))
-        return result
-    return []
+    if idx < len(pairs):
+        a = pairs[idx][0]
+        b = pairs[idx][1]
 
-# --- UI ---
-st.title("研究室興味ランキング調査")
+        lab1 = a[0] if isinstance(a, list) else a
+        lab2 = b[0] if isinstance(b, list) else b
 
-if st.session_state.page_state == "compare":
-    pair = find_pair(st.session_state.stack)
-    if pair:
-        lab1, lab2 = pair
-        st.write("次のうち、どちらの研究室により興味がありますか？")
+        st.write("どちらの研究室により興味がありますか？")
         col1, col2 = st.columns(2)
         with col1:
             if st.button(f"🅰 {lab1}"):
-                pair.clear()
-                pair.append(lab1)
+                st.session_state.next_round.append(a)
+                st.session_state.current_index += 1
         with col2:
             if st.button(f"🅱 {lab2}"):
-                pair.clear()
-                pair.append(lab2)
+                st.session_state.next_round.append(b)
+                st.session_state.current_index += 1
     else:
-        st.session_state.result = flatten(st.session_state.stack)
-        st.session_state.finished = True
-        st.session_state.page_state = "result"
+        # ラウンド終了
+        st.session_state.rounds = st.session_state.next_round
+        st.session_state.next_round = []
+        if len(st.session_state.rounds) == 1:
+            st.session_state.done = True
+            st.session_state.phase = "done"
+        else:
+            prepare_pairs()
 
-elif st.session_state.page_state == "result":
+# --- 表示フェーズ ---
+st.title("研究室興味ランキング調査")
+
+if st.session_state.phase == "compare":
+    if st.session_state.current_index == 0 and not st.session_state.current_pairs:
+        prepare_pairs()
+    compare_ui()
+
+elif st.session_state.phase == "done":
     st.success("あなたの興味順ランキングはこちら！")
-    for i, lab in enumerate(st.session_state.result, 1):
+    final = st.session_state.rounds[0]
+    for i, lab in enumerate(final, 1):
         st.write(f"{i}位: {lab}")
+
     if st.button("やり直す"):
-        st.session_state.page_state = "reset"
+        st.session_state.phase = "reset"

@@ -82,7 +82,7 @@ if st.session_state.phase == "sorting":
 # --- ランキング表示 ---
 elif st.session_state.phase == "done":
     st.success("あなたの興味順ランキングはこちら！")
-    for i, lab in enumerate([x[0] for x in st.session_state.items], 1):
+    for i, lab in enumerate([x[0] for x in st.session_state.items if x], 1):
         st.write(f"{i}位: {lab}")
     if st.button("やり直す"):
         st.session_state.phase = "reset"

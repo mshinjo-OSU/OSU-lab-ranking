@@ -1,7 +1,7 @@
 import streamlit as st
 import random
 
-# 研究室リスト
+# 研究室リスト（シャッフル）
 labs = [
     "吉川研究室（プライバシー保護技術）", "小山田研究室（可視化情報学）", "原研究室（イノベーション・マネジメント）",
     "鎌原研究室（インターネットアプリケーション）", "笠原研究室（観光情報学）", "杉山研究室（情報検索・自然言語処理）",
@@ -16,65 +16,43 @@ random.shuffle(labs)
 st.title("研究室興味ランキング調査")
 
 # セッション初期化
-if "labs" not in st.session_state:
-    st.session_state.labs = labs
-    st.session_state.stack = [[lab] for lab in labs]
-    st.session_state.current_pair = None
+if "comparisons" not in st.session_state:
+    st.session_state.comparisons = []
+    st.session_state.index = 0
+    st.session_state.scores = {lab: 0 for lab in labs}
+    st.session_state.pairs = [
+        (a, b) for i, a in enumerate(labs) for b in labs[i+1:]
+    ]
+    random.shuffle(st.session_state.pairs)
     st.session_state.finished = False
 
-# 次の比較対象をセット
-def next_comparison():
-    if len(st.session_state.stack) == 1:
-        st.session_state.finished = True
-        return
-    new_stack = []
-    for i in range(0, len(st.session_state.stack), 2):
-        if i + 1 == len(st.session_state.stack):
-            new_stack.append(st.session_state.stack[i])
-        else:
-            new_stack.append([st.session_state.stack[i], st.session_state.stack[i + 1]])
-    st.session_state.stack = new_stack
+# メインロジック
+if not st.session_state.finished and st.session_state.index < len(st.session_state.pairs):
+    lab1, lab2 = st.session_state.pairs[st.session_state.index]
+    st.write("次のうち、どちらの研究室により興味がありますか？")
 
-# 現在の比較対象を取得
-def resolve_pair():
-    stack = st.session_state.stack
-    for i in range(len(stack)):
-        if isinstance(stack[i], list) and len(stack[i]) == 2:
-            left = stack[i][0]
-            right = stack[i][1]
-            if isinstance(left, list):
-                left = left[0]
-            if isinstance(right, list):
-                right = right[0]
-            st.session_state.current_pair = (i, left, right)
-            return
-    st.session_state.current_pair = None
-
-# 表示ロジック
-if not st.session_state.finished:
-    resolve_pair()
-    if st.session_state.current_pair:
-        idx, lab1, lab2 = st.session_state.current_pair
-        st.write("次のうち、どちらの研究室により興味がありますか？")
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button(f"🅰 {lab1}"):
-                st.session_state.stack[idx] = [lab1]
-                next_comparison()
-        with col2:
-            if st.button(f"🅱 {lab2}"):
-                st.session_state.stack[idx] = [lab2]
-                next_comparison()
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button(f"🅰 {lab1}", key=f"btn1_{st.session_state.index}"):
+            st.session_state.scores[lab1] += 1
+            st.session_state.index += 1
+    with col2:
+        if st.button(f"🅱 {lab2}", key=f"btn2_{st.session_state.index}"):
+            st.session_state.scores[lab2] += 1
+            st.session_state.index += 1
 else:
-    flat_list = []
-    def flatten(stack):
-        for item in stack:
-            if isinstance(item, list):
-                flatten(item)
-            else:
-                flat_list.append(item)
-    flatten(st.session_state.stack)
+    if not st.session_state.finished:
+        st.session_state.finished = True
+        # スコア順に並び替え
+        st.session_state.ranked_labs = sorted(
+            st.session_state.scores.items(), key=lambda x: x[1], reverse=True
+        )
 
     st.success("あなたの興味順ランキングはこちら！")
-    for i, lab in enumerate(flat_list, 1):
-        st.write(f"{i}位: {lab}")
+    for i, (lab, score) in enumerate(st.session_state.ranked_labs, 1):
+        st.write(f"{i}位: {lab}（スコア: {score}）")
+
+    if st.button("やり直す"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.experimental_rerun()

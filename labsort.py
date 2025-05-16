@@ -11,8 +11,10 @@ def initialize():
         "夏川研究室（情報可視化・スポーツデータ科学）", "上阪研究室（計量文献学）", "新庄研究室（コンピュータ数学）"
     ]
     random.shuffle(labs)
-    st.session_state.items = [[lab] for lab in labs]
-    st.session_state.stack = [(0, len(st.session_state.items))]
+    data = [[lab] for lab in labs]  # ← 一時変数に代入
+    st.session_state.items = data
+    st.session_state.stack = [(0, len(data))]  # ← ここでlen(data)を参照すれば安全
+
     st.session_state.merges = []
     st.session_state.left = []
     st.session_state.right = []
@@ -21,6 +23,7 @@ def initialize():
     st.session_state.j = 0
     st.session_state.k = 0
     st.session_state.phase = "sorting"
+
 
 # --- 初回のみ初期化 ---
 if "phase" not in st.session_state or st.session_state.phase == "reset":

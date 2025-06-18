@@ -65,6 +65,7 @@ st.markdown(
         background-color: #e6f4ea;
     }
     </style>
+    ,
     unsafe_allow_html=True
 )
 st.title("研究室興味ランキング")

@@ -59,16 +59,6 @@ def process_selection(winner, loser):
             prepare_pairs()
 
 # --- UI 描画 ---
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background-color: #fef7f9;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 st.title("研究室興味ランキング")
 
 if st.session_state.phase == "compare":

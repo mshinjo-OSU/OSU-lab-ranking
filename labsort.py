@@ -60,12 +60,13 @@ def process_selection(winner, loser):
 
 # --- UI 描画 ---
 st.markdown(
+    """
     <style>
-    body {
+    .stApp {
         background-color: #e6f4ea;
     }
     </style>
-    ,
+    """,
     unsafe_allow_html=True
 )
 st.title("研究室興味ランキング")

@@ -81,7 +81,7 @@ if st.session_state.phase == "compare":
         st.write("（ダブルクリックしてください。）")
 
 elif st.session_state.phase == "done":
-    st.success("あなたの興味順ランキングはこちら！結果を参考にして、研究室配属希望調査にご回答ください。")
+    st.success("あなたの興味ランキングはこちら！結果を参考にして、研究室配属希望調査にご回答ください")
     flat_result = flatten(st.session_state.rounds)
     for i, lab in enumerate(flat_result, 1):
         st.write(f"{i}位: {lab}")
